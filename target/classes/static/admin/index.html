@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Gateway & Load Balancer - Realtime Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --border-color: rgba(255, 255, 255, 0.1);
+            --accent-blue: #38bdf8;
+            --accent-green: #22c55e;
+            --accent-red: #ef4444;
+            --accent-yellow: #eab308;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            min-height: 100vh;
+            padding: 2rem;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(56, 189, 248, 0.12) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(34, 197, 94, 0.1) 0px, transparent 50%);
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .logo-title {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--accent-blue), #818cf8);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.2rem;
+        }
+
+        .metrics-bar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .metric-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.25rem;
+            transition: transform 0.2s ease;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .metric-title {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .metric-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            font-family: 'Fira Code', monospace;
+        }
+
+        .routes-container {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .route-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.5rem;
+        }
+
+        .route-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.25rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .route-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .badge {
+            padding: 0.35rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .badge-path { background: rgba(56, 189, 248, 0.2); color: var(--accent-blue); }
+        .badge-closed { background: rgba(34, 197, 94, 0.2); color: var(--accent-green); }
+        .badge-open { background: rgba(239, 68, 68, 0.2); color: var(--accent-red); }
+        .badge-half-open { background: rgba(234, 179, 8, 0.2); color: var(--accent-yellow); }
+
+        .algo-selector {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        select, input[type="number"] {
+            background: #1e293b;
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 0.4rem 0.8rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            outline: none;
+        }
+
+        button {
+            background: linear-gradient(135deg, var(--accent-blue), #0284c7);
+            border: none;
+            color: white;
+            padding: 0.45rem 0.9rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        button:hover { opacity: 0.9; }
+
+        .nodes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1rem;
+        }
+
+        .node-card {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .node-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .dot-UP { background-color: var(--accent-green); box-shadow: 0 0 8px var(--accent-green); }
+        .dot-DOWN { background-color: var(--accent-red); box-shadow: 0 0 8px var(--accent-red); }
+        .dot-DEGRADED { background-color: var(--accent-yellow); box-shadow: 0 0 8px var(--accent-yellow); }
+
+        .node-details {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .weight-control {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.8rem;
+            margin-top: 0.25rem;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo-title">
+            <div class="logo-icon">⚡</div>
+            <div>
+                <h2>L7 API Gateway & Load Balancer</h2>
+                <p style="font-size: 0.85rem; color: var(--text-muted);">Real-time Reactive Monitoring & Dynamic Traffic Management</p>
+            </div>
+        </div>
+        <div>
+            <span id="sse-status" class="badge badge-closed">Live SSE Connected</span>
+        </div>
+    </header>
+
+    <!-- Metrics Summary Bar -->
+    <section class="metrics-bar">
+        <div class="metric-card">
+            <div class="metric-title">Current RPS</div>
+            <div class="metric-value" id="metric-rps" style="color: var(--accent-blue);">0</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-title">Total Requests</div>
+            <div class="metric-value" id="metric-total">0</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-title">Successful (2xx)</div>
+            <div class="metric-value" id="metric-success" style="color: var(--accent-green);">0</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-title">Rate Limited (429)</div>
+            <div class="metric-value" id="metric-ratelimit" style="color: var(--accent-yellow);">0</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-title">Short-Circuited (503)</div>
+            <div class="metric-value" id="metric-shortcircuit" style="color: var(--accent-red);">0</div>
+        </div>
+    </section>
+
+    <!-- Routes & Nodes Cluster View -->
+    <section id="routes-container" class="routes-container">
+        <div style="text-align: center; color: var(--text-muted); padding: 2rem;">Connecting to real-time metric stream...</div>
+    </section>
+
+    <script>
+        const evtSource = new EventSource('/admin/api/metrics/stream');
+
+        evtSource.onopen = () => {
+            document.getElementById('sse-status').innerText = 'Live SSE Connected';
+            document.getElementById('sse-status').className = 'badge badge-closed';
+        };
+
+        evtSource.onerror = () => {
+            document.getElementById('sse-status').innerText = 'SSE Reconnecting...';
+            document.getElementById('sse-status').className = 'badge badge-open';
+        };
+
+        evtSource.addEventListener('gateway-metrics', (e) => {
+            const data = JSON.parse(e.data);
+
+            // Update top metrics
+            document.getElementById('metric-rps').innerText = data.currentRps;
+            document.getElementById('metric-total').innerText = data.totalRequests;
+            document.getElementById('metric-success').innerText = data.successfulRequests;
+            document.getElementById('metric-ratelimit').innerText = data.rateLimitedRequests;
+            document.getElementById('metric-shortcircuit').innerText = data.shortCircuitedRequests;
+
+            // Render Routes & Backend Nodes
+            renderRoutes(data.routes);
+        });
+
+        function renderRoutes(routes) {
+            const container = document.getElementById('routes-container');
+            container.innerHTML = '';
+
+            routes.forEach(route => {
+                const routeCard = document.createElement('div');
+                routeCard.className = 'route-card';
+
+                const circuitClass = route.circuitState === 'CLOSED' ? 'badge-closed' : 
+                                    (route.circuitState === 'OPEN' ? 'badge-open' : 'badge-half-open');
+
+                routeCard.innerHTML = `
+                    <div class="route-header">
+                        <div class="route-info">
+                            <h3>Route: ${route.id}</h3>
+                            <span class="badge badge-path">${route.pathPattern}</span>
+                            <span class="badge ${circuitClass}">Circuit: ${route.circuitState}</span>
+                            <span class="badge" style="background: rgba(255,255,255,0.1); color: white;">Rate Limit: ${route.rateLimitRps} RPS</span>
+                        </div>
+                        <div class="algo-selector">
+                            <label style="font-size: 0.85rem; color: var(--text-muted);">Algorithm:</label>
+                            <select id="algo-${route.id}">
+                                <option value="ROUND_ROBIN" ${route.algorithm === 'ROUND_ROBIN' ? 'selected' : ''}>Round-Robin</option>
+                                <option value="WEIGHTED" ${route.algorithm === 'WEIGHTED' ? 'selected' : ''}>Weighted RR</option>
+                                <option value="LEAST_CONNECTIONS" ${route.algorithm === 'LEAST_CONNECTIONS' ? 'selected' : ''}>Least Connections</option>
+                                <option value="IP_HASH" ${route.algorithm === 'IP_HASH' ? 'selected' : ''}>IP Hash (Sticky)</option>
+                            </select>
+                            <button onclick="updateAlgorithm('${route.id}')">Apply</button>
+                        </div>
+                    </div>
+                    <div class="nodes-grid">
+                        ${route.nodes.map(node => `
+                            <div class="node-card">
+                                <div class="node-header">
+                                    <span style="font-weight: 600; font-family: 'Fira Code', monospace;">${node.id}</span>
+                                    <span class="status-dot dot-${node.status}" title="Status: ${node.status}"></span>
+                                </div>
+                                <div class="node-details">
+                                    <span>Target URI:</span>
+                                    <span style="font-family: 'Fira Code', monospace; color: var(--accent-blue);">${node.uri}</span>
+                                </div>
+                                <div class="node-details">
+                                    <span>Active Connections:</span>
+                                    <span style="font-weight: 700; color: white;">${node.activeConnections}</span>
+                                </div>
+                                <div class="weight-control">
+                                    <span>Weight:</span>
+                                    <input type="number" id="weight-${route.id}-${node.id}" value="${node.weight}" min="1" max="100" style="width: 65px;">
+                                    <button onclick="updateWeight('${route.id}', '${node.id}')" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">Set</button>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+                container.appendChild(routeCard);
+            });
+        }
+
+        async function updateAlgorithm(routeId) {
+            const algo = document.getElementById(`algo-${routeId}`).value;
+            try {
+                const res = await fetch(`/admin/api/routes/${routeId}/algorithm?algorithm=${algo}`, { method: 'POST' });
+                if (res.ok) {
+                    alert(`Load balancing algorithm updated to ${algo} for route ${routeId}!`);
+                }
+            } catch (err) {
+                alert('Failed to update algorithm: ' + err.message);
+            }
+        }
+
+        async function updateWeight(routeId, nodeId) {
+            const weight = document.getElementById(`weight-${routeId}-${nodeId}`).value;
+            try {
+                const res = await fetch(`/admin/api/routes/${routeId}/nodes/${nodeId}/weight?weight=${weight}`, { method: 'POST' });
+                if (res.ok) {
+                    alert(`Node ${nodeId} weight updated to ${weight}!`);
+                }
+            } catch (err) {
+                alert('Failed to update node weight: ' + err.message);
+            }
+        }
+    </script>
+</body>
+</html>

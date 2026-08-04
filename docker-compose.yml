@@ -1,0 +1,66 @@
+version: '3.8'
+
+services:
+  gateway-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: gateway-service
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_DATA_REDIS_HOST=redis
+      - SPRING_DATA_REDIS_PORT=6379
+    depends_on:
+      - redis
+      - backend-node-1
+      - backend-node-2
+      - backend-node-3
+    networks:
+      - gateway-net
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis-rate-limiter
+    ports:
+      - "6379:6379"
+    networks:
+      - gateway-net
+
+  # Mock Backend Microservice Instances (Echoing server responses)
+  backend-node-1:
+    image: ealen/echo-server:latest
+    container_name: backend-node-1
+    ports:
+      - "8081:80"
+    environment:
+      - PORT=80
+      - NODE_NAME=backend-node-1
+    networks:
+      - gateway-net
+
+  backend-node-2:
+    image: ealen/echo-server:latest
+    container_name: backend-node-2
+    ports:
+      - "8082:80"
+    environment:
+      - PORT=80
+      - NODE_NAME=backend-node-2
+    networks:
+      - gateway-net
+
+  backend-node-3:
+    image: ealen/echo-server:latest
+    container_name: backend-node-3
+    ports:
+      - "8083:80"
+    environment:
+      - PORT=80
+      - NODE_NAME=backend-node-3
+    networks:
+      - gateway-net
+
+networks:
+  gateway-net:
+    driver: bridge
