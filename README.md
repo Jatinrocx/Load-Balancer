@@ -87,28 +87,5 @@ docker compose up -d
 * **API Gateway Proxy (User Service):** `http://localhost:8080/api/v1/users/123`
 * **Gateway Prometheus Metrics:** `http://localhost:8080/actuator/prometheus`
 
----
 
-## 🎯 Interview Talking Points (System Design Questions)
-
-When discussing this project in technical backend interviews, emphasize these points:
-
-1. **Why WebFlux over Tomcat?**
-   > *"Tomcat uses 1 thread per request. Under 10,000 concurrent requests, thread pool exhaustion stalls the proxy. WebFlux uses Netty's non-blocking I/O multiplexing event loop, handling high concurrency with minimal CPU and memory overhead."*
-
-2. **Why Redis Lua for Rate Limiting?**
-   > *"Checking and updating tokens in Java causes dirty reads across multi-node gateway deployments. Executing the algorithm in a single Redis Lua script guarantees atomic execution without locks."*
-
-3. **Why Smooth Weighted Round Robin?**
-   > *"Naive weighted round robin sends requests in bursts (A, A, A, B). Smooth weighted balancing interleaves traffic (A, B, A, A), preventing high-capacity nodes from experiencing micro-spikes."*
-
-4. **How does Circuit Breaking prevent Cascading Failures?**
-   > *"If a downstream microservice slows down or crashes, client calls pile up waiting for timeouts. Tripping the circuit to OPEN short-circuits calls instantly with HTTP 503, preserving gateway resources and allowing the downstream service to recover."*
-
----
-
-## 🧪 Running Unit & Integration Tests
-
-```bash
-mvn clean test
 ```
